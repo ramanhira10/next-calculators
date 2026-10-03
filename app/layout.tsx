@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Compound Interest Calculator | Folio",
-  description: "Estimate how your principal and returns may grow with compounding.",
+  title: "Folio | Investment Calculators",
+  description: "Explore compound-interest and SIP investment calculators.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
