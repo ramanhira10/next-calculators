@@ -1,68 +1,268 @@
-import Image from "next/image";
+"use client";
+
+import { useState, type ChangeEvent, type FormEvent } from "react";
+
+const frequencies = [
+  { value: "1", label: "Annually" },
+  { value: "2", label: "Semi-annually" },
+  { value: "4", label: "Quarterly" },
+  { value: "12", label: "Monthly" },
+  { value: "365", label: "Daily" },
+];
+
+const currencies = [
+  { value: "USD", label: "USD — US Dollar" },
+  { value: "EUR", label: "EUR — Euro" },
+  { value: "GBP", label: "GBP — British Pound" },
+  { value: "INR", label: "INR — Indian Rupee" },
+];
+
+type CalculatorInputs = {
+  principal: string;
+  rate: string;
+  years: string;
+  frequency: string;
+  currency: string;
+};
+
+type Calculation = {
+  interest: number;
+  total: number;
+};
 
 export default function Home() {
+  const [inputs, setInputs] = useState<CalculatorInputs>({
+    principal: "",
+    rate: "",
+    years: "",
+    frequency: "12",
+    currency: "INR",
+  });
+  const [calculation, setCalculation] = useState<Calculation | null>(null);
+  const [error, setError] = useState("");
+
+  function updateInput(event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
+    const { name, value } = event.target;
+    setInputs((current) => ({ ...current, [name]: value }));
+    setCalculation(null);
+    setError("");
+  }
+
+  function calculate(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const principal = Number(inputs.principal);
+    const rate = Number(inputs.rate);
+    const years = Number(inputs.years);
+    const periodsPerYear = Number(inputs.frequency);
+
+    if (principal <= 0 || years <= 0 || rate <= -100) {
+      setError("Enter a principal and term above zero, and a return greater than -100%.");
+      setCalculation(null);
+      return;
+    }
+
+    const total =
+      principal * Math.pow(1 + rate / 100 / periodsPerYear, periodsPerYear * years);
+
+    if (!Number.isFinite(total)) {
+      setError("Those values are too large to calculate. Try a smaller amount, rate, or term.");
+      setCalculation(null);
+      return;
+    }
+
+    setCalculation({ total, interest: total - principal });
+    setError("");
+  }
+
+  const formatMoney = (amount: number) =>
+    new Intl.NumberFormat(inputs.currency === "INR" ? "en-IN" : "en-US", {
+      style: "currency",
+      currency: inputs.currency,
+      maximumFractionDigits: 2,
+    }).format(amount);
+
+  const selectedFrequency = frequencies.find(
+    (frequency) => frequency.value === inputs.frequency,
+  )?.label.toLowerCase();
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="app-shell">
+      <header className="topbar">
+        <a className="wordmark" href="#home" aria-label="Folio home">
+          folio<span>.</span>
+        </a>
+        <span className="topbar-note">A clearer view of your money</span>
+        <span className="topbar-index">FINANCIAL TOOLS&nbsp; / &nbsp;01</span>
+      </header>
+
+      <main className="calculator-page" id="home">
+        <div className="page-heading">
+          <p className="eyebrow"><span /> GROWTH PROJECTION</p>
+          <h1>Compound interest</h1>
+          <p className="intro">
+            See how your starting balance could grow when your returns earn returns.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <div className="calculator-layout">
+          <form className="input-panel" onSubmit={calculate}>
+            <div className="panel-heading">
+              <span className="step-number">01</span>
+              <div>
+                <h2>Your investment</h2>
+                <p>Set the details for your projection.</p>
+              </div>
+            </div>
+
+            <div className="field-grid">
+              <label className="field field-wide" htmlFor="principal">
+                <span className="field-label">Starting principal</span>
+                <span className="input-wrap">
+                  <span className="input-prefix" aria-hidden="true">
+                    {inputs.currency === "INR" ? "₹" : inputs.currency}
+                  </span>
+                  <input
+                    id="principal"
+                    name="principal"
+                    type="number"
+                    min="0.01"
+                    step="any"
+                    inputMode="decimal"
+                    placeholder="10,000"
+                    value={inputs.principal}
+                    onChange={updateInput}
+                    required
+                  />
+                </span>
+              </label>
+
+              <label className="field" htmlFor="rate">
+                <span className="field-label">Annual rate of return</span>
+                <span className="input-wrap">
+                  <input
+                    id="rate"
+                    name="rate"
+                    type="number"
+                    min="-99.99"
+                    max="1000"
+                    step="any"
+                    inputMode="decimal"
+                    placeholder="7"
+                    value={inputs.rate}
+                    onChange={updateInput}
+                    required
+                  />
+                  <span className="input-suffix" aria-hidden="true">%</span>
+                </span>
+              </label>
+
+              <label className="field" htmlFor="years">
+                <span className="field-label">Investment term</span>
+                <span className="input-wrap">
+                  <input
+                    id="years"
+                    name="years"
+                    type="number"
+                    min="0.01"
+                    max="1000"
+                    step="any"
+                    inputMode="decimal"
+                    placeholder="10"
+                    value={inputs.years}
+                    onChange={updateInput}
+                    required
+                  />
+                  <span className="input-suffix">years</span>
+                </span>
+              </label>
+
+              <label className="field" htmlFor="frequency">
+                <span className="field-label">Compounding frequency</span>
+                <select
+                  id="frequency"
+                  name="frequency"
+                  value={inputs.frequency}
+                  onChange={updateInput}
+                >
+                  {frequencies.map((frequency) => (
+                    <option key={frequency.value} value={frequency.value}>
+                      {frequency.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="field" htmlFor="currency">
+                <span className="field-label">Currency</span>
+                <select
+                  id="currency"
+                  name="currency"
+                  value={inputs.currency}
+                  onChange={updateInput}
+                >
+                  {currencies.map((currency) => (
+                    <option key={currency.value} value={currency.value}>
+                      {currency.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            {error && <p className="form-error" role="alert">{error}</p>}
+
+            <button className="calculate-button" type="submit">
+              Calculate growth <span aria-hidden="true">↗</span>
+            </button>
+            <p className="form-footnote">This projection is an estimate, not financial advice.</p>
+          </form>
+
+          <section className="result-panel" aria-live="polite" aria-atomic="true">
+            <div className="result-topline">
+              <span className="step-number result-step">02</span>
+              <span className="result-tag">
+                <span className="status-dot" /> YOUR PROJECTION
+              </span>
+            </div>
+
+            {calculation ? (
+              <>
+                <p className="result-caption total-caption">
+                  Total value after {inputs.years} years
+                </p>
+                <p className="total-value">{formatMoney(calculation.total)}</p>
+                <div className="result-divider" />
+                <div className="result-detail">
+                  <span>Interest earned</span>
+                  <strong>{formatMoney(calculation.interest)}</strong>
+                </div>
+                <div className="result-detail">
+                  <span>Starting principal</span>
+                  <strong>{formatMoney(Number(inputs.principal))}</strong>
+                </div>
+                <div className="result-context">
+                  {inputs.rate}% annual return, compounded {selectedFrequency}
+                </div>
+              </>
+            ) : (
+              <div className="empty-result">
+                <span className="result-orbit" aria-hidden="true">↗</span>
+                <p className="result-caption">Your future balance</p>
+                <p className="empty-value">Ready when you are.</p>
+                <p className="empty-hint">
+                  Enter your investment details and calculate to see your estimated
+                  interest and total value.
+                </p>
+              </div>
+            )}
+          </section>
         </div>
+
+        <footer className="page-footer">
+          <span>THE POWER OF COMPOUNDING</span>
+          <span>More time. More growth.</span>
+        </footer>
       </main>
     </div>
   );
